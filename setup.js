@@ -1,0 +1,57 @@
+const Database = require('better-sqlite3'); // [cite: 74]
+const db = new Database('nyondo_stock.db'); // [cite: 75]
+
+// 1. Create the Products Table 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    price REAL NOT NULL
+  )
+`);
+
+// 2. Create the Users Table 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'attendant'
+  )
+`);
+
+// 3. Prepare Insert Statement for Products 
+const insertProduct = db.prepare('INSERT INTO products (name, description, price) VALUES (?, ?, ?)');
+
+const productData = [
+    ['Cement (bag)', 'Portland cement 50kg bag', 35000], // [cite: 87]
+    ['Iron Sheet 3m', 'Gauge 30 roofing sheet 3m long', 110000], // [cite: 88]
+    ['Paint 5L', 'Exterior wall paint white 5L', 60000], // [cite: 89]
+    ['Nails 1kg', 'Common wire nails 1kg pack', 12000], // [cite: 90]
+    ['Timber 2x4', 'Pine timber plank 2x4 per metre', 25000] // [cite: 91]
+];
+
+// 4. Prepare Insert Statement for Users 
+const insertUser = db.prepare('INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)');
+
+const userData = [
+    ['admin', 'admin123', 'admin'],
+    ['fatuma', 'pass456', 'attendant'],
+    ['wasswa', 'pass789', 'manager']
+];
+
+// 5. Run Transactions to insert all data 
+const insertAll = db.transaction((products, users) => {
+    for (const p of products) insertProduct.run(...p);
+    for (const u of users) insertUser.run(...u);
+});
+
+insertAll(productData, userData);
+
+// 6. Verify and Output 
+console.log("Products in Database:");
+const rows = db.prepare('SELECT * FROM products').all();
+console.log(rows);
+
+db.close();
