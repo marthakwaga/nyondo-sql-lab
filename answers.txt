@@ -1,1 +1,18 @@
-with Template literals, data is displayed the way it is input which is risky.The database reads the input as part of the command. With a parameterized () query, the database is told exactly what the "command" is first, and the input is treated strictly as text (data) that cannot change the command's logic.
+Test 1 (cement): [
+  {
+    id: 1,
+    name: 'Cement (bag)',
+    description: 'Portland cement 50kg bag',
+    price: 38000
+  }
+]
+Rejected: Invalid search input.
+Test 2 (empty): null
+Rejected: Invalid search input.
+Test 3 (script): null
+Test 4 (valid login): { id: 1, username: 'admin', password: 'admin12
+3', role: 'admin' }
+Rejected: Password too short.
+Test 5 (short pass): null
+Rejected: Invalid username format.
+Test 6 (space in user): null

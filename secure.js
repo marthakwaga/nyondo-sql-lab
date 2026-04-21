@@ -1,28 +1,36 @@
 const Database = require('better-sqlite3');
 const db = new Database('nyondo_stock.db');
 
-// Secure version using ? placeholders 
 function searchProductSafe(name) {
+    // Validation: Must be a string, at least 2 characters, no < > or ; characters
+    if (typeof name !== 'string' || name.length < 2 || /[<>;]/.test(name)) {
+        console.error("Rejected: Invalid search input.");
+        return null;
+    }
+
     const query = 'SELECT * FROM products WHERE name LIKE ?';
-    console.log('Query:', query);
-    
-    // We wrap the search term in % signs here, not in the SQL string
-    const rows = db.prepare(query).all(`%${name}%`); 
-    return rows;
+    return db.prepare(query).all(`%${name}%`);
 }
 
-// Secure login using ? placeholders 
 function loginSafe(username, password) {
+    // Validation: Username no spaces, not empty. Password at least 6 characters. 
+    if (!username || typeof username !== 'string' || username.includes(' ')) {
+        console.error("Rejected: Invalid username format.");
+        return null;
+    }
+    if (!password || typeof password !== 'string' || password.length < 6) {
+        console.error("Rejected: Password too short.");
+        return null;
+    }
+
     const query = 'SELECT * FROM users WHERE username = ? AND password = ?';
-    console.log('Query:', query);
-    
-    const row = db.prepare(query).get(username, password);
-    return row;
+    return db.prepare(query).get(username, password);
 }
 
-// --- TEST CASES: These should now return [] or undefined --
-
-console.log('Test 1 (OR Attack):', searchProductSafe("' OR 1=1--"));
-console.log('Test 2 (UNION Attack):', searchProductSafe("' UNION SELECT id,username,password,role FROM users--"));
-console.log('Test 3 (Bypass):', loginSafe("admin'--", 'anything'));
-console.log('Test 4 (Always True):', loginSafe("' OR '1'='1", "' OR '1'='1"));
+// --- TEST CASES  ---
+console.log('Test 1 (cement):', searchProductSafe('cement'));       // Works
+console.log('Test 2 (empty):', searchProductSafe(''));              // Rejected
+console.log('Test 3 (script):', searchProductSafe('<script>'));    // Rejected
+console.log('Test 4 (valid login):', loginSafe('admin', 'admin123')); // Works
+console.log('Test 5 (short pass):', loginSafe('admin', 'ab'));      // Rejected
+console.log('Test 6 (space in user):', loginSafe('ad min', 'pass123')); // Rejected
